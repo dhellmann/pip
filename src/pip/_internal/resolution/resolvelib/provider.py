@@ -16,12 +16,12 @@ class PipProvider(AbstractProvider):
         self,
         factory,  # type: Factory
         ignore_dependencies,  # type: bool
-        prefer_minimum_versions,  # type: bool
+        strategy,
     ):
         # type: (...) -> None
         self._factory = factory
         self._ignore_dependencies = ignore_dependencies
-        self._prefer_minimum_versions = prefer_minimum_versions
+        self._strategy = strategy
 
     def get_install_requirement(self, c):
         # type: (Candidate) -> Optional[InstallRequirement]
@@ -38,9 +38,11 @@ class PipProvider(AbstractProvider):
         information  # type: Sequence[Tuple[Requirement, Candidate]]
     ):
         # type: (...) -> Any
-        if self._prefer_minimum_versions:
-            return 0
-        return len(candidates)
+        return self._strategy.get_preferred_candidate(
+            resolution,
+            candidates,
+            information,
+        )
 
     def find_matches(self, requirement):
         # type: (Requirement) -> Sequence[Candidate]

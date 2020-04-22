@@ -32,6 +32,7 @@ from pip._internal.self_outdated_check import (
 )
 from pip._internal.utils.temp_dir import tempdir_kinds
 from pip._internal.utils.typing import MYPY_CHECK_RUNNING
+from pip._internal.resolution.resolvelib.strategy import strategy_factory
 
 if MYPY_CHECK_RUNNING:
     from optparse import Values
@@ -200,7 +201,7 @@ class RequirementCommand(IndexGroupCommand):
         super(RequirementCommand, self).__init__(*args, **kw)
 
         self.cmd_opts.add_option(cmdoptions.no_clean())
-        self.cmd_opts.add_option(cmdoptions.prefer_minimum_versions())
+        self.cmd_opts.add_option(cmdoptions.strategy())
 
     @staticmethod
     def make_requirement_preparer(
@@ -245,7 +246,7 @@ class RequirementCommand(IndexGroupCommand):
         ignore_installed=True,               # type: bool
         ignore_requires_python=False,        # type: bool
         force_reinstall=False,               # type: bool
-        upgrade_strategy="to-satisfy-only",  # type: str
+        strategy="to-satisfy-only",          # type: str
         use_pep517=None,                     # type: Optional[bool]
         py_version_info=None            # type: Optional[Tuple[int, ...]]
     ):
@@ -263,6 +264,7 @@ class RequirementCommand(IndexGroupCommand):
         # "Resolver" class being redefined.
         if 'resolver' in options.unstable_features:
             import pip._internal.resolution.resolvelib.resolver
+            strategy_impl = strategy_factory(options.strategy)
             return pip._internal.resolution.resolvelib.resolver.Resolver(
                 preparer=preparer,
                 finder=finder,
@@ -273,9 +275,8 @@ class RequirementCommand(IndexGroupCommand):
                 ignore_installed=ignore_installed,
                 ignore_requires_python=ignore_requires_python,
                 force_reinstall=force_reinstall,
-                upgrade_strategy=upgrade_strategy,
+                strategy=strategy_impl,
                 py_version_info=py_version_info,
-                prefer_minimum_versions=options.prefer_minimum_versions,
             )
         import pip._internal.resolution.legacy.resolver
         return pip._internal.resolution.legacy.resolver.Resolver(
@@ -288,7 +289,7 @@ class RequirementCommand(IndexGroupCommand):
             ignore_installed=ignore_installed,
             ignore_requires_python=ignore_requires_python,
             force_reinstall=force_reinstall,
-            upgrade_strategy=upgrade_strategy,
+            upgrade_strategy=strategy,
             py_version_info=py_version_info,
         )
 

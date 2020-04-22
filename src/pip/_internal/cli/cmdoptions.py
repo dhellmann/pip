@@ -930,14 +930,22 @@ unstable_feature = partial(
 )  # type: Callable[..., Option]
 
 
-prefer_minimum_versions = partial(
+strategy = partial(
     Option,
-    '--prefer-minimum-versions',
-    dest='prefer_minimum_versions',
-    action='store_true',
-    default=False,
+    '--strategy',
+    dest='strategy',
+    default='only-if-needed',
+    choices=['only-if-needed', 'eager', 'earliest-compatible'],
     help=SUPPRESS_HELP,  # TODO: Enable this when the resolver actually works.
-    # help='Use the lowest version that matches a requirement.',
+    # help='Determines how dependency resolution should be handled '
+    # '[default: %default]. '
+    # '"eager" - dependencies are upgraded regardless of '
+    # 'whether the currently installed version satisfies the '
+    # 'requirements of the upgraded package(s). '
+    # '"only-if-needed" -  are upgraded only when they do not '
+    # 'satisfy the requirements of the upgraded package(s).'
+    # '"earliest-compatible" - dependencies with the lowest '
+    # 'compatible version number are selected.'
 )  # type: Callable[..., Option]
 
 

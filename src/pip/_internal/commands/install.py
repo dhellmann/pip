@@ -241,9 +241,12 @@ class InstallCommand(RequirementCommand):
             raise CommandError("Can not combine '--user' and '--target'")
 
         cmdoptions.check_install_build_global(options)
-        upgrade_strategy = "to-satisfy-only"
-        if options.upgrade:
-            upgrade_strategy = options.upgrade_strategy
+        if 'resolver' in options.unstable_features:
+            upgrade_strategy = options.strategy
+        else:
+            upgrade_strategy = "to-satisfy-only"
+            if options.upgrade:
+                upgrade_strategy = options.upgrade_strategy
 
         cmdoptions.check_dist_restriction(options, check_target=True)
 

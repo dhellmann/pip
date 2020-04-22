@@ -10,6 +10,7 @@ from pip._internal.exceptions import InstallationError
 from pip._internal.req.req_set import RequirementSet
 from pip._internal.resolution.base import BaseResolver
 from pip._internal.resolution.resolvelib.provider import PipProvider
+from pip._internal.resolution.resolvelib.strategy import AbstractStrategy
 from pip._internal.utils.typing import MYPY_CHECK_RUNNING
 
 from .factory import Factory
@@ -41,7 +42,7 @@ class Resolver(BaseResolver):
         ignore_installed,  # type: bool
         ignore_requires_python,  # type: bool
         force_reinstall,  # type: bool
-        upgrade_strategy,  # type: str
+        strategy,  # type: AbstractStrategy
         py_version_info=None,  # type: Optional[Tuple[int, ...]]
         prefer_minimum_versions=False,  # type: bool
     ):
@@ -56,7 +57,7 @@ class Resolver(BaseResolver):
             py_version_info=py_version_info,
         )
         self.ignore_dependencies = ignore_dependencies
-        self.prefer_minimum_versions = prefer_minimum_versions
+        self.strategy = strategy
         self._result = None  # type: Optional[Result]
 
     def resolve(self, root_reqs, check_supported_wheels):
@@ -69,10 +70,10 @@ class Resolver(BaseResolver):
         provider = PipProvider(
             factory=self.factory,
             ignore_dependencies=self.ignore_dependencies,
-            prefer_minimum_versions=self.prefer_minimum_versions,
+            strategy=self.strategy,
         )
         reporter = BaseReporter()
-        resolver = RLResolver(provider, reporter)
+        resolver = RLResolver(provider, reporter, self.strategy)
 
         requirements = [
             self.factory.make_requirement_from_install_req(r)
@@ -80,10 +81,7 @@ class Resolver(BaseResolver):
         ]
 
         try:
-            self._result = resolver.resolve(
-                requirements,
-                prefer_minimum_versions=self.prefer_minimum_versions,
-            )
+            self._result = resolver.resolve(requirements)
 
         except ResolutionImpossible as e:
             error = self.factory.get_installation_error(e)

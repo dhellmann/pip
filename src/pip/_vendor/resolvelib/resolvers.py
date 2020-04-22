@@ -150,9 +150,10 @@ class Resolution(object):
     the resolution process, and holds the results afterwards.
     """
 
-    def __init__(self, provider, reporter):
+    def __init__(self, provider, reporter, strategy):
         self._p = provider
         self._r = reporter
+        self._strategy = strategy
         self._states = []
 
     @property
@@ -216,12 +217,9 @@ class Resolution(object):
             criteria[name] = crit
         return criteria
 
-    def _attempt_to_pin_criterion(self, name, criterion, prefer_minimum_versions):
+    def _attempt_to_pin_criterion(self, name, criterion):
         causes = []
-        if prefer_minimum_versions:
-            candidates_in_order = criterion.candidates
-        else:
-            candidates_in_order = reversed(criterion.candidates)
+        candidates_in_order = self._strategy.sort_candidates(criterion.candidates)
         for candidate in candidates_in_order:
             try:
                 criteria = self._get_criteria_to_update(candidate)
@@ -274,7 +272,7 @@ class Resolution(object):
 
         return False
 
-    def resolve(self, requirements, max_rounds, prefer_minimum_versions):
+    def resolve(self, requirements, max_rounds):
         if self._states:
             raise RuntimeError("already resolved")
 
@@ -312,7 +310,7 @@ class Resolution(object):
                 key=self._get_criterion_item_preference,
             )
             failure_causes = self._attempt_to_pin_criterion(
-                name, criterion, prefer_minimum_versions)
+                name, criterion)
 
             # Backtrack if pinning fails.
             if failure_causes:
@@ -386,7 +384,7 @@ class Resolver(AbstractResolver):
 
     base_exception = ResolverException
 
-    def resolve(self, requirements, max_rounds=100, prefer_minimum_versions=False):
+    def resolve(self, requirements, max_rounds=100):
         """Take a collection of constraints, spit out the resolution result.
 
         The return value is a representation to the final resolution result. It
@@ -414,10 +412,9 @@ class Resolver(AbstractResolver):
             dependency, but you can try to resolve this by increasing the
             `max_rounds` argument.
         """
-        resolution = Resolution(self.provider, self.reporter)
+        resolution = Resolution(self.provider, self.reporter, self.strategy)
         state = resolution.resolve(
             requirements,
             max_rounds=max_rounds,
-            prefer_minimum_versions=prefer_minimum_versions,
         )
         return _build_result(state)

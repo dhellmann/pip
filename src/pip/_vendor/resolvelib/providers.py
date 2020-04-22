@@ -85,9 +85,10 @@ class AbstractResolver(object):
 
     base_exception = Exception
 
-    def __init__(self, provider, reporter):
+    def __init__(self, provider, reporter, strategy):
         self.provider = provider
         self.reporter = reporter
+        self.strategy = strategy
 
     def resolve(self, requirements, **kwargs):
         """Take a collection of constraints, spit out the resolution result.
